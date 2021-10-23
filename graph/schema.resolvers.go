@@ -7,29 +7,49 @@ import (
 	"context"
 	"devto/graph/generated"
 	"devto/graph/model"
+	"encoding/json"
 	"fmt"
-	"math/rand"
+	"log"
+
+	resty "github.com/go-resty/resty/v2"
 )
 
-func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
-	todo := &model.Todo{
-		Text: input.Text,
-		ID:   fmt.Sprintf("T%d", rand.Int()),
-		User: &model.User{ID: input.UserID, Name: "user " + input.UserID},
+func manipulateQuery(input map[string]interface{}) map[string]string {
+	query := make(map[string]string)
+	for key, element := range input {
+		if element != nil {
+			query[key] = fmt.Sprintf("%v", element)
+			continue
+		}
 	}
-	r.todos = append(r.todos, todo)
-	return todo, nil
+	return query
 }
 
-func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
-	return r.todos, nil
+func (r *queryResolver) Articles(ctx context.Context, input *model.ArticlesQuery) ([]*model.Article, error) {
+	// Manipulate Query
+	queryInterface := make(map[string]interface{})
+	jsonString, _ := json.Marshal(*input)
+	json.Unmarshal([]byte(jsonString), &queryInterface)
+	queryString := manipulateQuery(queryInterface)
+	// Send Request
+	client := resty.New()
+	resp, err := client.R().
+		SetQueryParams(queryString).
+		SetHeader("Accept", "application/json").
+		ForceContentType("application/json").
+		Get("https://dev.to/api/articles")
+	if err != nil {
+		log.Fatal(err)
+	}
+	//Parse Data
+	var articles []*model.Article
+	if err := json.Unmarshal(resp.Body(), &articles); err != nil { // Parse []byte to go struct pointer
+		fmt.Println("Can not unmarshal JSON")
+	}
+	return articles, nil
 }
-
-// Mutation returns generated.MutationResolver implementation.
-func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
-type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
