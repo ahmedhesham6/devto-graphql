@@ -11,72 +11,96 @@ enum ArticleState {
 }
 
 input ArticlesQuery {
-  page:Int
-  per_page:Int
-  tag:String
-  tags:String
-  tags_exclude:String
-  username:String
-  state:ArticleState
-  top:Int
-  collection_id:Int
+  page: Int
+  per_page: Int
+  tag: String
+  tags: String
+  tags_exclude: String
+  username: String
+  state: ArticleState
+  top: Int
+  collection_id: Int
+}
+
+input PaginationQuery {
+  page: Int
+  per_page: Int
 }
 
 type Article {
-  type_of:String!
+  type_of: String!
   id: Int!
-  title:String!
-  description:String!
-  cover_image:String
-  readable_publish_date:String!
+  title: String!
+  description: String!
+  cover_image: String
+  readable_publish_date: String!
   social_image: String!
-  tag_list:[String!]!
-  tags:String!
-  slug:String!
-  path:String!
-  url:String!
-  canonical_url:String!
-  comments_count:Int!
-  positive_reactions_count:Int!
-  public_reactions_count:Int!
-  created_at:DateTime!
-  edited_at:DateTime!
-  crossposted_at:DateTime
-  published_at:DateTime
-  last_comment_at:DateTime!
-  published_timestamp:DateTime!
-  user:User!
-  reading_time_minutes:Int!
-  organization:Organization!
-  flare_tag:FlareTag!
+  tag_list: [String!]!
+  tags: String!
+  slug: String!
+  path: String!
+  url: String!
+  canonical_url: String!
+  comments_count: Int!
+  positive_reactions_count: Int!
+  public_reactions_count: Int!
+  created_at: DateTime!
+  edited_at: DateTime!
+  crossposted_at: DateTime
+  published_at: DateTime
+  last_comment_at: DateTime!
+  published_timestamp: DateTime!
+  user: User!
+  reading_time_minutes: Int!
+  organization: Organization!
+  flare_tag: FlareTag!
+}
+
+type VideoArticle {
+  type_of: String!
+  id: Int!
+  path: String!
+  cloudinary_video_url: String!
+  title: String!
+  user_id: Int!
+  video_duration_in_minutes: String!
+  video_source_url: String
+  user: VideoUser!
+}
+
+type VideoUser {
+  name: String!
 }
 
 type User {
   name: String!
-  username:String!
-  twitter_username:String
-  github_username:String
-  website_url:String
-  profile_image:String!
-  profile_image_90:String!
+  username: String!
+  twitter_username: String
+  github_username: String
+  website_url: String
+  profile_image: String!
+  profile_image_90: String!
 }
 
 type Organization {
   name: String!
-  username:String!
-  slug:String!
-  profile_image:String!
-  profile_image_90:String!
+  username: String!
+  slug: String!
+  profile_image: String!
+  profile_image_90: String!
 }
 
-type FlareTag{
-  name:String!
-  bg_color_hex:String!
-  text_color_hex:String!
+type FlareTag {
+  name: String!
+  bg_color_hex: String!
+  text_color_hex: String!
 }
 
 type Query {
-  articles(input:ArticlesQuery) : [Article]
+  articles(input: ArticlesQuery): [Article]
+  article(id: Int!): Article
+  latestArticles(input: PaginationQuery): [Article]
+  videoArticles(input: PaginationQuery): [VideoArticle]
 }
 
 # type Mutation {

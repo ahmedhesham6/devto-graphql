@@ -63,6 +63,11 @@ type Organization struct {
 	ProfileImage90 string `json:"profile_image_90"`
 }
 
+type PaginationQuery struct {
+	Page    *int `json:"page"`
+	PerPage *int `json:"per_page"`
+}
+
 type User struct {
 	Name            string  `json:"name"`
 	Username        string  `json:"username"`
@@ -71,6 +76,22 @@ type User struct {
 	WebsiteURL      *string `json:"website_url"`
 	ProfileImage    string  `json:"profile_image"`
 	ProfileImage90  string  `json:"profile_image_90"`
+}
+
+type VideoArticle struct {
+	TypeOf                 string     `json:"type_of"`
+	ID                     int        `json:"id"`
+	Path                   string     `json:"path"`
+	CloudinaryVideoURL     string     `json:"cloudinary_video_url"`
+	Title                  string     `json:"title"`
+	UserID                 int        `json:"user_id"`
+	VideoDurationInMinutes string     `json:"video_duration_in_minutes"`
+	VideoSourceURL         *string    `json:"video_source_url"`
+	User                   *VideoUser `json:"user"`
+}
+
+type VideoUser struct {
+	Name string `json:"name"`
 }
 
 type ArticleState string

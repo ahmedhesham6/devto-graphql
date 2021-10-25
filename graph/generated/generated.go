@@ -85,7 +85,10 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Articles func(childComplexity int, input *model.ArticlesQuery) int
+		Article        func(childComplexity int, id int) int
+		Articles       func(childComplexity int, input *model.ArticlesQuery) int
+		LatestArticles func(childComplexity int, input *model.PaginationQuery) int
+		VideoArticles  func(childComplexity int, input *model.PaginationQuery) int
 	}
 
 	User struct {
@@ -97,10 +100,29 @@ type ComplexityRoot struct {
 		Username        func(childComplexity int) int
 		WebsiteURL      func(childComplexity int) int
 	}
+
+	VideoArticle struct {
+		CloudinaryVideoURL     func(childComplexity int) int
+		ID                     func(childComplexity int) int
+		Path                   func(childComplexity int) int
+		Title                  func(childComplexity int) int
+		TypeOf                 func(childComplexity int) int
+		User                   func(childComplexity int) int
+		UserID                 func(childComplexity int) int
+		VideoDurationInMinutes func(childComplexity int) int
+		VideoSourceURL         func(childComplexity int) int
+	}
+
+	VideoUser struct {
+		Name func(childComplexity int) int
+	}
 }
 
 type QueryResolver interface {
 	Articles(ctx context.Context, input *model.ArticlesQuery) ([]*model.Article, error)
+	Article(ctx context.Context, id int) (*model.Article, error)
+	LatestArticles(ctx context.Context, input *model.PaginationQuery) ([]*model.Article, error)
+	VideoArticles(ctx context.Context, input *model.PaginationQuery) ([]*model.VideoArticle, error)
 }
 
 type executableSchema struct {
@@ -356,6 +378,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Organization.Username(childComplexity), true
 
+	case "Query.article":
+		if e.complexity.Query.Article == nil {
+			break
+		}
+
+		args, err := ec.field_Query_article_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Article(childComplexity, args["id"].(int)), true
+
 	case "Query.articles":
 		if e.complexity.Query.Articles == nil {
 			break
@@ -367,6 +401,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Articles(childComplexity, args["input"].(*model.ArticlesQuery)), true
+
+	case "Query.latestArticles":
+		if e.complexity.Query.LatestArticles == nil {
+			break
+		}
+
+		args, err := ec.field_Query_latestArticles_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.LatestArticles(childComplexity, args["input"].(*model.PaginationQuery)), true
+
+	case "Query.videoArticles":
+		if e.complexity.Query.VideoArticles == nil {
+			break
+		}
+
+		args, err := ec.field_Query_videoArticles_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.VideoArticles(childComplexity, args["input"].(*model.PaginationQuery)), true
 
 	case "User.github_username":
 		if e.complexity.User.GithubUsername == nil {
@@ -416,6 +474,76 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.WebsiteURL(childComplexity), true
+
+	case "VideoArticle.cloudinary_video_url":
+		if e.complexity.VideoArticle.CloudinaryVideoURL == nil {
+			break
+		}
+
+		return e.complexity.VideoArticle.CloudinaryVideoURL(childComplexity), true
+
+	case "VideoArticle.id":
+		if e.complexity.VideoArticle.ID == nil {
+			break
+		}
+
+		return e.complexity.VideoArticle.ID(childComplexity), true
+
+	case "VideoArticle.path":
+		if e.complexity.VideoArticle.Path == nil {
+			break
+		}
+
+		return e.complexity.VideoArticle.Path(childComplexity), true
+
+	case "VideoArticle.title":
+		if e.complexity.VideoArticle.Title == nil {
+			break
+		}
+
+		return e.complexity.VideoArticle.Title(childComplexity), true
+
+	case "VideoArticle.type_of":
+		if e.complexity.VideoArticle.TypeOf == nil {
+			break
+		}
+
+		return e.complexity.VideoArticle.TypeOf(childComplexity), true
+
+	case "VideoArticle.user":
+		if e.complexity.VideoArticle.User == nil {
+			break
+		}
+
+		return e.complexity.VideoArticle.User(childComplexity), true
+
+	case "VideoArticle.user_id":
+		if e.complexity.VideoArticle.UserID == nil {
+			break
+		}
+
+		return e.complexity.VideoArticle.UserID(childComplexity), true
+
+	case "VideoArticle.video_duration_in_minutes":
+		if e.complexity.VideoArticle.VideoDurationInMinutes == nil {
+			break
+		}
+
+		return e.complexity.VideoArticle.VideoDurationInMinutes(childComplexity), true
+
+	case "VideoArticle.video_source_url":
+		if e.complexity.VideoArticle.VideoSourceURL == nil {
+			break
+		}
+
+		return e.complexity.VideoArticle.VideoSourceURL(childComplexity), true
+
+	case "VideoUser.name":
+		if e.complexity.VideoUser.Name == nil {
+			break
+		}
+
+		return e.complexity.VideoUser.Name(childComplexity), true
 
 	}
 	return 0, false
@@ -480,72 +608,96 @@ enum ArticleState {
 }
 
 input ArticlesQuery {
-  page:Int
-  per_page:Int
-  tag:String
-  tags:String
-  tags_exclude:String
-  username:String
-  state:ArticleState
-  top:Int
-  collection_id:Int
+  page: Int
+  per_page: Int
+  tag: String
+  tags: String
+  tags_exclude: String
+  username: String
+  state: ArticleState
+  top: Int
+  collection_id: Int
+}
+
+input PaginationQuery {
+  page: Int
+  per_page: Int
 }
 
 type Article {
-  type_of:String!
+  type_of: String!
   id: Int!
-  title:String!
-  description:String!
-  cover_image:String
-  readable_publish_date:String!
+  title: String!
+  description: String!
+  cover_image: String
+  readable_publish_date: String!
   social_image: String!
-  tag_list:[String!]!
-  tags:String!
-  slug:String!
-  path:String!
-  url:String!
-  canonical_url:String!
-  comments_count:Int!
-  positive_reactions_count:Int!
-  public_reactions_count:Int!
-  created_at:DateTime!
-  edited_at:DateTime!
-  crossposted_at:DateTime
-  published_at:DateTime
-  last_comment_at:DateTime!
-  published_timestamp:DateTime!
-  user:User!
-  reading_time_minutes:Int!
-  organization:Organization!
-  flare_tag:FlareTag!
+  tag_list: [String!]!
+  tags: String!
+  slug: String!
+  path: String!
+  url: String!
+  canonical_url: String!
+  comments_count: Int!
+  positive_reactions_count: Int!
+  public_reactions_count: Int!
+  created_at: DateTime!
+  edited_at: DateTime!
+  crossposted_at: DateTime
+  published_at: DateTime
+  last_comment_at: DateTime!
+  published_timestamp: DateTime!
+  user: User!
+  reading_time_minutes: Int!
+  organization: Organization!
+  flare_tag: FlareTag!
+}
+
+type VideoArticle {
+  type_of: String!
+  id: Int!
+  path: String!
+  cloudinary_video_url: String!
+  title: String!
+  user_id: Int!
+  video_duration_in_minutes: String!
+  video_source_url: String
+  user: VideoUser!
+}
+
+type VideoUser {
+  name: String!
 }
 
 type User {
   name: String!
-  username:String!
-  twitter_username:String
-  github_username:String
-  website_url:String
-  profile_image:String!
-  profile_image_90:String!
+  username: String!
+  twitter_username: String
+  github_username: String
+  website_url: String
+  profile_image: String!
+  profile_image_90: String!
 }
 
 type Organization {
   name: String!
-  username:String!
-  slug:String!
-  profile_image:String!
-  profile_image_90:String!
+  username: String!
+  slug: String!
+  profile_image: String!
+  profile_image_90: String!
 }
 
-type FlareTag{
-  name:String!
-  bg_color_hex:String!
-  text_color_hex:String!
+type FlareTag {
+  name: String!
+  bg_color_hex: String!
+  text_color_hex: String!
 }
 
 type Query {
-  articles(input:ArticlesQuery) : [Article]
+  articles(input: ArticlesQuery): [Article]
+  article(id: Int!): Article
+  latestArticles(input: PaginationQuery): [Article]
+  videoArticles(input: PaginationQuery): [VideoArticle]
 }
 
 # type Mutation {
@@ -574,6 +726,21 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_article_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_articles_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -581,6 +748,36 @@ func (ec *executionContext) field_Query_articles_args(ctx context.Context, rawAr
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOArticlesQuery2ᚖdevtoᚋgraphᚋmodelᚐArticlesQuery(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_latestArticles_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.PaginationQuery
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOPaginationQuery2ᚖdevtoᚋgraphᚋmodelᚐPaginationQuery(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_videoArticles_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.PaginationQuery
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOPaginationQuery2ᚖdevtoᚋgraphᚋmodelᚐPaginationQuery(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1847,6 +2044,123 @@ func (ec *executionContext) _Query_articles(ctx context.Context, field graphql.C
 	return ec.marshalOArticle2ᚕᚖdevtoᚋgraphᚋmodelᚐArticle(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_article(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_article_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Article(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Article)
+	fc.Result = res
+	return ec.marshalOArticle2ᚖdevtoᚋgraphᚋmodelᚐArticle(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_latestArticles(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_latestArticles_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().LatestArticles(rctx, args["input"].(*model.PaginationQuery))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Article)
+	fc.Result = res
+	return ec.marshalOArticle2ᚕᚖdevtoᚋgraphᚋmodelᚐArticle(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_videoArticles(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_videoArticles_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().VideoArticles(rctx, args["input"].(*model.PaginationQuery))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.VideoArticle)
+	fc.Result = res
+	return ec.marshalOVideoArticle2ᚕᚖdevtoᚋgraphᚋmodelᚐVideoArticle(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2138,6 +2452,353 @@ func (ec *executionContext) _User_profile_image_90(ctx context.Context, field gr
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ProfileImage90, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VideoArticle_type_of(ctx context.Context, field graphql.CollectedField, obj *model.VideoArticle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "VideoArticle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TypeOf, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VideoArticle_id(ctx context.Context, field graphql.CollectedField, obj *model.VideoArticle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "VideoArticle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VideoArticle_path(ctx context.Context, field graphql.CollectedField, obj *model.VideoArticle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "VideoArticle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Path, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VideoArticle_cloudinary_video_url(ctx context.Context, field graphql.CollectedField, obj *model.VideoArticle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "VideoArticle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CloudinaryVideoURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VideoArticle_title(ctx context.Context, field graphql.CollectedField, obj *model.VideoArticle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "VideoArticle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VideoArticle_user_id(ctx context.Context, field graphql.CollectedField, obj *model.VideoArticle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "VideoArticle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VideoArticle_video_duration_in_minutes(ctx context.Context, field graphql.CollectedField, obj *model.VideoArticle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "VideoArticle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VideoDurationInMinutes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VideoArticle_video_source_url(ctx context.Context, field graphql.CollectedField, obj *model.VideoArticle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "VideoArticle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VideoSourceURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VideoArticle_user(ctx context.Context, field graphql.CollectedField, obj *model.VideoArticle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "VideoArticle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.VideoUser)
+	fc.Result = res
+	return ec.marshalNVideoUser2ᚖdevtoᚋgraphᚋmodelᚐVideoUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VideoUser_name(ctx context.Context, field graphql.CollectedField, obj *model.VideoUser) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "VideoUser",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3363,6 +4024,37 @@ func (ec *executionContext) unmarshalInputArticlesQuery(ctx context.Context, obj
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPaginationQuery(ctx context.Context, obj interface{}) (model.PaginationQuery, error) {
+	var it model.PaginationQuery
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "page":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+			it.Page, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "per_page":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("per_page"))
+			it.PerPage, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -3624,6 +4316,39 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_articles(ctx, field)
 				return res
 			})
+		case "article":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_article(ctx, field)
+				return res
+			})
+		case "latestArticles":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_latestArticles(ctx, field)
+				return res
+			})
+		case "videoArticles":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_videoArticles(ctx, field)
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -3673,6 +4398,97 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "profile_image_90":
 			out.Values[i] = ec._User_profile_image_90(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var videoArticleImplementors = []string{"VideoArticle"}
+
+func (ec *executionContext) _VideoArticle(ctx context.Context, sel ast.SelectionSet, obj *model.VideoArticle) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, videoArticleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("VideoArticle")
+		case "type_of":
+			out.Values[i] = ec._VideoArticle_type_of(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "id":
+			out.Values[i] = ec._VideoArticle_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "path":
+			out.Values[i] = ec._VideoArticle_path(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cloudinary_video_url":
+			out.Values[i] = ec._VideoArticle_cloudinary_video_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "title":
+			out.Values[i] = ec._VideoArticle_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "user_id":
+			out.Values[i] = ec._VideoArticle_user_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "video_duration_in_minutes":
+			out.Values[i] = ec._VideoArticle_video_duration_in_minutes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "video_source_url":
+			out.Values[i] = ec._VideoArticle_video_source_url(ctx, field, obj)
+		case "user":
+			out.Values[i] = ec._VideoArticle_user(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var videoUserImplementors = []string{"VideoUser"}
+
+func (ec *executionContext) _VideoUser(ctx context.Context, sel ast.SelectionSet, obj *model.VideoUser) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, videoUserImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("VideoUser")
+		case "name":
+			out.Values[i] = ec._VideoUser_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4063,6 +4879,16 @@ func (ec *executionContext) marshalNUser2ᚖdevtoᚋgraphᚋmodelᚐUser(ctx con
 	return ec._User(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNVideoUser2ᚖdevtoᚋgraphᚋmodelᚐVideoUser(ctx context.Context, sel ast.SelectionSet, v *model.VideoUser) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._VideoUser(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
 	return ec.___Directive(ctx, sel, &v)
 }
@@ -4446,6 +5272,14 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return graphql.MarshalInt(*v)
 }
 
+func (ec *executionContext) unmarshalOPaginationQuery2ᚖdevtoᚋgraphᚋmodelᚐPaginationQuery(ctx context.Context, v interface{}) (*model.PaginationQuery, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPaginationQuery(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -4468,6 +5302,54 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return graphql.MarshalString(*v)
+}
+
+func (ec *executionContext) marshalOVideoArticle2ᚕᚖdevtoᚋgraphᚋmodelᚐVideoArticle(ctx context.Context, sel ast.SelectionSet, v []*model.VideoArticle) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOVideoArticle2ᚖdevtoᚋgraphᚋmodelᚐVideoArticle(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOVideoArticle2ᚖdevtoᚋgraphᚋmodelᚐVideoArticle(ctx context.Context, sel ast.SelectionSet, v *model.VideoArticle) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._VideoArticle(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {
